@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chatbot Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:    #0d0d0d;
+    --paper:  #f5f3ef;
+    --card:   #ffffff;
+    --accent: #4f46e5;
+    --accent2:#818cf8;
+    --danger: #ef4444;
+    --muted:  #9ca3af;
+    --border: #e5e7eb;
+    --radius: 14px;
+    --shadow: 0 4px 24px rgba(0,0,0,.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .layout    { display: flex; min-height: 100vh; }
+  .sidebar   {
+    width: 240px; flex-shrink: 0;
+    background: var(--ink);
+    display: flex; flex-direction: column;
+    padding: 28px 20px;
+    position: sticky; top: 0; height: 100vh;
+  }
+  .logo      {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 20px;
+    color: #fff; margin-bottom: 36px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon { font-size: 24px; }
+  .nav-item  {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 10px;
+    color: rgba(255,255,255,.6);
+    cursor: pointer; font-size: 14px; font-weight: 500;
+    transition: all .15s; margin-bottom: 4px;
+    text-decoration: none;
+  }
+  .nav-item:hover, .nav-item.active {
+    background: rgba(255,255,255,.1);
+    color: #fff;
+  }
+  .nav-icon  { font-size: 18px; width: 22px; text-align: center; }
+  .sidebar-footer {
+    margin-top: auto;
+    font-size: 12px; color: rgba(255,255,255,.3);
+    line-height: 1.6;
+  }
+
+  /* ── Main ── */
+  .main      { flex: 1; padding: 40px; max-width: 900px; }
+
+  /* ── Header ── */
+  .page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 36px;
+  }
+  .page-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 32px;
+  }
+  .page-subtitle { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer; border: none; transition: all .15s;
+    text-decoration: none;
+  }
+  .btn-primary   { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79,70,229,.35); }
+  .btn-secondary { background: var(--card); color: var(--ink); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--paper); }
+  .btn-danger    { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
+  .btn-danger:hover { background: #fee2e2; }
+  .btn-sm        { padding: 7px 14px; font-size: 13px; }
+
+  /* ── Cards ── */
+  .bot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+
+  .bot-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    transition: transform .2s, box-shadow .2s;
+    cursor: pointer;
+    position: relative;
+  }
+  .bot-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,.1); }
+
+  .bot-color-dot {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 16px;
+  }
+  .bot-name  { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 6px; }
+  .bot-model { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .bot-desc  { font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 18px;
+               display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .bot-actions { display: flex; gap: 8px; }
+
+  .empty-state {
+    text-align: center; padding: 80px 40px;
+    background: var(--card); border-radius: var(--radius);
+    border: 2px dashed var(--border);
+  }
+  .empty-icon  { font-size: 56px; margin-bottom: 16px; }
+  .empty-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 22px; margin-bottom: 8px; }
+  .empty-sub   { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 20px;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--card); border-radius: 20px;
+    width: 100%; max-width: 620px; max-height: 90vh;
+    overflow-y: auto; padding: 36px;
+    transform: scale(.96); transition: transform .2s;
+    box-shadow: 0 24px 80px rgba(0,0,0,.2);
+  }
+  .modal-overlay.open .modal { transform: scale(1); }
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 24px; margin-bottom: 8px;
+  }
+  .modal-sub { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+  /* ── Form ── */
+  .form-group   { margin-bottom: 20px; }
+  .form-row     { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  label         { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #374151; }
+  label .hint   { font-weight: 400; color: var(--muted); margin-left: 6px; }
+  input[type=text], input[type=password], input[type=url], input[type=color],
+  select, textarea {
+    width: 100%; padding: 10px 14px;
+    border: 1px solid var(--border); border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    background: var(--paper); color: var(--ink);
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+  }
+  textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+  input[type=color] { padding: 4px 8px; height: 42px; cursor: pointer; }
+
+  .range-row  { display: flex; align-items: center; gap: 12px; }
+  .range-val  { font-size: 13px; font-weight: 600; color: var(--accent); min-width: 28px; }
+  input[type=range] { flex: 1; accent-color: var(--accent); }
+
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  /* ── Embed panel ── */
+  .embed-panel {
+    background: var(--ink); border-radius: var(--radius);
+    padding: 28px; margin-top: 32px;
+  }
+  .embed-panel h3 {
+    font-family: 'Syne', sans-serif; font-weight: 700;
+    color: #fff; font-size: 18px; margin-bottom: 6px;
+  }
+  .embed-panel p  { color: rgba(255,255,255,.6); font-size: 13px; margin-bottom: 16px; }
+  .embed-code {
+    background: #1a1a2e; border-radius: 10px;
+    padding: 16px; font-family: 'DM Mono', 'Fira Code', monospace;
+    font-size: 12px; color: #a5b4fc; line-height: 1.7;
+    word-break: break-all; white-space: pre-wrap;
+    border: 1px solid rgba(255,255,255,.08);
+  }
+  .copy-btn {
+    margin-top: 12px; background: rgba(255,255,255,.1);
+    color: #fff; border: 1px solid rgba(255,255,255,.15);
+    padding: 8px 18px; border-radius: 8px;
+    cursor: pointer; font-size: 13px;
+    transition: background .15s;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,.18); }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 28px; right: 28px;
+    background: var(--ink); color: #fff;
+    padding: 12px 20px; border-radius: 10px;
+    font-size: 14px; z-index: 9999;
+    transform: translateY(80px); opacity: 0;
+    transition: all .3s; box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ── Chats view ── */
+  .chats-list { display: flex; flex-direction: column; gap: 12px; }
+  .chat-row {
+    background: var(--card); border-radius: var(--radius);
+    border: 1px solid var(--border); padding: 18px 22px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .chat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .chat-meta { flex: 1; }
+  .chat-session { font-size: 12px; color: var(--muted); font-family: monospace; }
+  .chat-preview { font-size: 14px; margin-top: 2px; color: #374151; }
+  .chat-time  { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+
+  /* ── Section header ── */
+  .section    { display: none; }
+  .section.active { display: block; }
+
+  /* ── Stat cards ── */
+  .stats-row  { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+  .stat-card  {
+    background: var(--card); border-radius: var(--radius);
+    border: 1px solid var(--border); padding: 20px 22px;
+  }
+  .stat-val   { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 36px; }
+  .stat-label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  @media (max-width: 720px) {
+    .sidebar    { display: none; }
+    .main       { padding: 24px 16px; }
+    .form-row   { grid-template-columns: 1fr; }
+    .stats-row  { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo"><span class="logo-icon">🤖</span> Chatbot<br>Builder</div>
+    <nav>
+      <a class="nav-item active" data-section="bots" onclick="showSection('bots',this)">
+        <span class="nav-icon">🤖</span> My Chatbots
+      </a>
+      <a class="nav-item" data-section="chats" onclick="showSection('chats',this)">
+        <span class="nav-icon">💬</span> Conversations
+      </a>
+      <a class="nav-item" data-section="docs" onclick="showSection('docs',this)">
+        <span class="nav-icon">📖</span> How to Embed
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      Chatbot Builder v2.0<br>
+      Powered by OpenAI
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- BOTS section -->
+    <div id="section-bots" class="section active">
+      <div class="page-header">
+        <div>
+          <div class="page-title">My Chatbots</div>
+          <div class="page-subtitle">Create and manage your AI chatbots</div>
+        </div>
+        <button class="btn btn-primary" onclick="openCreateModal()">
+          <span>＋</span> New Chatbot
+        </button>
+      </div>
+
+      <div id="bots-container">
+        <div class="empty-state">
+          <div class="empty-icon">🤖</div>
+          <div class="empty-title">No chatbots yet</div>
+          <div class="empty-sub">Create your first chatbot and embed it anywhere</div>
+          <button class="btn btn-primary" onclick="openCreateModal()">Create Your First Chatbot</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHATS section -->
+    <div id="section-chats" class="section">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Conversations</div>
+          <div class="page-subtitle">All chats happening across your bots</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="loadChats()">↻ Refresh</button>
+      </div>
+      <div id="chats-container">
+        <p style="color:var(--muted);font-size:14px;">Loading conversations…</p>
+      </div>
+    </div>
+
+    <!-- DOCS section -->
+    <div id="section-docs" class="section">
+      <div class="page-header">
+        <div>
+          <div class="page-title">How to Embed</div>
+          <div class="page-subtitle">Add a chatbot to any website in 2 minutes</div>
+        </div>
+      </div>
+
+      <div style="background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:32px;line-height:1.8;">
+        <h3 style="font-family:Syne,sans-serif;font-weight:700;font-size:20px;margin-bottom:8px;">Step 1 – Create a chatbot</h3>
+        <p style="color:#6b7280;font-size:14px;margin-bottom:28px;">Go to <strong>My Chatbots</strong> and click <strong>New Chatbot</strong>. Fill in the name, instructions, and your OpenAI API key.</p>
+
+        <h3 style="font-family:Syne,sans-serif;font-weight:700;font-size:20px;margin-bottom:8px;">Step 2 – Copy the embed snippet</h3>
+        <p style="color:#6b7280;font-size:14px;margin-bottom:28px;">Click <strong>Embed</strong> on any chatbot card to see its unique snippet.</p>
+
+        <h3 style="font-family:Syne,sans-serif;font-weight:700;font-size:20px;margin-bottom:8px;">Step 3 – Paste on your website</h3>
+        <p style="color:#6b7280;font-size:14px;margin-bottom:12px;">Paste the snippet just before <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">&lt;/body&gt;</code> on any page.</p>
+
+        <div style="background:#f8fafc;border-radius:10px;border:1px solid var(--border);padding:16px;margin-bottom:28px;">
+          <table style="font-size:13px;border-collapse:collapse;width:100%;">
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="text-align:left;padding:8px 12px;font-weight:600;">Platform</th>
+              <th style="text-align:left;padding:8px 12px;font-weight:600;">Where to paste</th>
+            </tr>
+            <tr><td style="padding:8px 12px;">WordPress</td><td style="padding:8px 12px;color:#6b7280;">Appearance → Theme Editor → footer.php</td></tr>
+            <tr style="background:#f8fafc;"><td style="padding:8px 12px;">Shopify</td><td style="padding:8px 12px;color:#6b7280;">Online Store → Themes → Edit Code → theme.liquid</td></tr>
+            <tr><td style="padding:8px 12px;">Webflow</td><td style="padding:8px 12px;color:#6b7280;">Project Settings → Custom Code → Footer Code</td></tr>
+            <tr style="background:#f8fafc;"><td style="padding:8px 12px;">Squarespace</td><td style="padding:8px 12px;color:#6b7280;">Settings → Advanced → Code Injection → Footer</td></tr>
+            <tr><td style="padding:8px 12px;">Plain HTML</td><td style="padding:8px 12px;color:#6b7280;">Before &lt;/body&gt; in your HTML file</td></tr>
+          </table>
+        </div>
+
+        <h3 style="font-family:Syne,sans-serif;font-weight:700;font-size:20px;margin-bottom:8px;">Getting an OpenAI API key</h3>
+        <p style="color:#6b7280;font-size:14px;">
+          1. Go to <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--accent);">platform.openai.com/api-keys</a><br>
+          2. Sign in or create a free account<br>
+          3. Click <strong>Create new secret key</strong><br>
+          4. Copy the key (starts with <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">sk-</code>) and paste it when creating your chatbot
+        </p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal-overlay" id="bot-modal" onclick="closeModalOnOverlay(event)">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">New Chatbot</div>
+    <div class="modal-sub" id="modal-sub">Set up your AI chatbot in minutes</div>
+
+    <input type="hidden" id="edit-bot-id">
+
+    <div class="form-group">
+      <label>Bot Name</label>
+      <input type="text" id="f-name" placeholder="e.g. Support Bot, Sales Assistant…">
+    </div>
+
+    <div class="form-group">
+      <label>System Instructions <span class="hint">– defines how the bot behaves</span></label>
+      <textarea id="f-instructions" rows="4" placeholder="You are a friendly customer support agent for Acme Co. Answer questions about our products and help customers with issues. Keep responses concise and helpful."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Welcome Message</label>
+      <input type="text" id="f-welcome" placeholder="Hello! How can I help you today?">
+    </div>
+
+    <div class="form-group">
+      <label>OpenAI API Key <span class="hint">– stays on your server, never shared</span></label>
+      <input type="password" id="f-apikey" placeholder="sk-…">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>AI Model</label>
+        <select id="f-model">
+          <option value="gpt-4o-mini">gpt-4o-mini (fast, cheap)</option>
+          <option value="gpt-4o">gpt-4o (smarter)</option>
+          <option value="gpt-4-turbo">gpt-4-turbo</option>
+          <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Creativity (Temperature)</label>
+        <div class="range-row">
+          <input type="range" id="f-temp" min="0" max="1" step="0.1" value="0.7" oninput="document.getElementById('temp-val').textContent=this.value">
+          <span class="range-val" id="temp-val">0.7</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Widget Color</label>
+        <input type="color" id="f-color" value="#6366f1">
+      </div>
+      <div class="form-group">
+        <label>Widget Position</label>
+        <select id="f-pos">
+          <option value="bottom-right">Bottom Right</option>
+          <option value="bottom-left">Bottom Left</option>
+          <option value="top-right">Top Right</option>
+          <option value="top-left">Top Left</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Allowed Domains <span class="hint">– optional, leave blank for all</span></label>
+      <input type="text" id="f-origins" placeholder="https://mysite.com, https://another.com">
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBot()">Save Chatbot</button>
+    </div>
+  </div>
+</div>
+
+<!-- Embed Modal -->
+<div class="modal-overlay" id="embed-modal" onclick="closeModalOnOverlay(event)">
+  <div class="modal">
+    <div class="modal-title">📋 Embed on Any Website</div>
+    <div class="modal-sub">Copy this snippet and paste it before &lt;/body&gt; on any page</div>
+    <div class="embed-code" id="embed-code-display"></div>
+    <button class="copy-btn" onclick="copyEmbed()">📋 Copy Snippet</button>
+    <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">Works on WordPress, Shopify, Webflow, plain HTML – anywhere you can add a &lt;script&gt; tag.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeEmbedModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="/js/dashboard.js"></script>
+</body>
+</html>
